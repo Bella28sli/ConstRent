@@ -18,7 +18,9 @@ router.register(r'maintenance_types', views.MaintenanceTypeViewSet)
 router.register(r'maintenance', views.MaintenanceViewSet)
 router.register(r'rent', views.RentViewSet)
 router.register(r'rent_items', views.RentItemsViewSet)
+router.register(r'preferences', views.UserPreferenceViewSet, basename='preferences')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('themes/', views.ThemePaletteView.as_view(), name='theme-palettes'),
 ]

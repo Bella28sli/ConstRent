@@ -225,16 +225,16 @@ class Migration(migrations.Migration):
         migrations.RunSQL("""
             CREATE OR REPLACE VIEW staff_logs_view AS
             SELECT
-                s.id AS staff_id,
-                s.first_name,
-                s.last_name,
-                s.login,
+                u.id AS staff_id,
+                u.first_name,
+                u.last_name,
+                u.username,
                 l.log_date,
                 l.action_type,
                 l.success_status,
                 l.description_text
-            FROM rental_system_staff s
-            LEFT JOIN rental_system_log l ON l.staff_id = s.id;
+            FROM auth_user u
+            LEFT JOIN rental_system_log l ON l.staff_id = u.id;
         """, """
             DROP VIEW IF EXISTS staff_logs_view;
         """),
@@ -342,14 +342,14 @@ class Migration(migrations.Migration):
                 m.maintenance_date,
                 e.id AS equipment_id,
                 e.equipment_name,
-                s.id AS staff_id,
-                s.first_name,
-                s.last_name,
+                u.id AS staff_id,
+                u.first_name,
+                u.last_name,
                 m.description,
                 m.status
             FROM rental_system_maintenance m
             JOIN rental_system_equipment e ON m.equipment_id = e.id
-            LEFT JOIN rental_system_staff s ON m.staff_id = s.id
+            LEFT JOIN auth_user u ON m.staff_id = u.id
             ORDER BY m.maintenance_date;
         """, """
             DROP VIEW IF EXISTS maintenance_schedule_view;
@@ -464,7 +464,7 @@ class Migration(migrations.Migration):
                     description_text,
                     success_status
                 ) VALUES (
-                    (SELECT id FROM rental_system_staff WHERE login = NEW.username LIMIT 1),
+                    (SELECT id FROM auth_user WHERE username = NEW.username LIMIT 1),
                     v_action_type,
                     v_description,
                     NEW.success

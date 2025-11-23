@@ -1,27 +1,40 @@
 """
 URL configuration for rental_project project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
+from django.views.generic import RedirectView
 
 from rental_system.views_backup import download_backup
+from rest_framework.permissions import AllowAny
+from rest_framework.schemas import get_schema_view
+from rest_framework.renderers import OpenAPIRenderer
 
+try:
+    from rest_framework.renderers import SwaggerUIRenderer
+    _schema_renderers = [OpenAPIRenderer, SwaggerUIRenderer]
+except ImportError:  # pragma: no cover
+    SwaggerUIRenderer = None
+    _schema_renderers = [OpenAPIRenderer]
+
+schema_view = get_schema_view(
+    title="ConstRent API",
+    description="OpenAPI спецификация API аренды оборудования.",
+    version="1.0.0",
+    public=True,
+    permission_classes=[AllowAny],
+    renderer_classes=_schema_renderers,
+)
 urlpatterns = [
-    # endpoint для скачивания бэкапа (требует staff/admin)
+    path('', RedirectView.as_view(url='/admin/', permanent=False)),
     path('admin/backups/<str:filename>/', download_backup, name='download_backup'),
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
+    path('api/schema/', schema_view, name='openapi-schema'),
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import connection, models
 
 from rental_system.services import RentalService
@@ -25,20 +26,6 @@ class Address(models.Model):
         return self.full_address
 
 
-# ---------- Staff ----------
-class Staff(models.Model):
-    role = models.ForeignKey(Role, on_delete=models.PROTECT)
-    last_name = models.CharField(max_length=100)
-    first_name = models.CharField(max_length=100)
-    patronymic = models.CharField(max_length=100, blank=True, null=True)
-    login = models.CharField(max_length=100, unique=True)
-    password = models.CharField(max_length=100)
-    email = models.EmailField(unique=True)
-
-    def __str__(self):
-        return f"{self.last_name} {self.first_name}"
-
-
 # ---------- Logs ----------
 class Log(models.Model):
     class ActionType(models.TextChoices):
@@ -58,7 +45,7 @@ class Log(models.Model):
         PERMISSION_CHANGE = "PERMISSION_CHANGE", "Изменение прав доступа"
         OTHER = "OTHER", "Другое действие"
 
-    staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True)
+    staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     log_date = models.DateTimeField(auto_now_add=True)
     action_type = models.CharField(
         max_length=100,
@@ -184,6 +171,7 @@ class Equipment(models.Model):
     fuel_type = models.CharField(max_length=20, choices=FUEL_CHOICES, default='petrol')
     rental_price_day = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
+    image = models.ImageField(upload_to='equipment_images/', blank=True, null=True)
 
     def __str__(self):
         return self.equipment_name
@@ -206,7 +194,7 @@ class Maintenance(models.Model):
     maintenance_date = models.DateTimeField()
     work_type = models.ForeignKey(MaintenanceType, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planned')
-    staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True)
+    staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE)
     description = models.TextField(blank=True, null=True)
 
@@ -230,7 +218,7 @@ class Rent(models.Model):
     ]
 
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
-    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+    staff = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     rent_agreement_number = models.CharField(max_length=50)
     rent_agreement_date = models.DateField()
     start_date = models.DateField()
@@ -267,3 +255,48 @@ class RentItems(models.Model):
 
     def __str__(self):
         return f"{self.rent} - {self.equipment}"
+
+
+# ---------- User preferences ----------
+class UserPreference(models.Model):
+    class Theme(models.TextChoices):
+        LIGHT = "light", "Light"
+        DARK = "dark", "Dark"
+        SYSTEM = "system", "System"
+
+    class DateFormat(models.TextChoices):
+        YMD = "YYYY-MM-DD", "YYYY-MM-DD"
+        DMY = "DD.MM.YYYY", "DD.MM.YYYY"
+        MDY = "MM/DD/YYYY", "MM/DD/YYYY"
+
+    class NumberFormat(models.TextChoices):
+        SPACE = "space", "1 234 567.89"
+        COMMA = "comma", "1,234,567.89"
+        DOT = "dot", "1.234.567,89"
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="preferences",
+    )
+    theme = models.CharField(
+        max_length=20,
+        choices=Theme.choices,
+        default=Theme.SYSTEM,
+    )
+    date_format = models.CharField(
+        max_length=20,
+        choices=DateFormat.choices,
+        default=DateFormat.DMY,
+    )
+    number_format = models.CharField(
+        max_length=20,
+        choices=NumberFormat.choices,
+        default=NumberFormat.SPACE,
+    )
+    page_size = models.PositiveIntegerField(default=50)
+    saved_filters = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Preferences for {self.user}"

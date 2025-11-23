@@ -1,9 +1,10 @@
 from django.db import connection
-from typing import List, Dict
-from datetime import date, timezone
+from typing import List, Dict, Optional
+from datetime import date, datetime
 from decimal import Decimal
 from django.forms import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 class RentalService:
     
@@ -51,20 +52,23 @@ class RentalService:
         client_id: int,
         staff_id: int,
         equipment_ids: list,
-        start_date: timezone.datetime,
-        planned_end_date: timezone.datetime,
+        start_date: datetime,
+        planned_end_date: datetime,
         total_amount: Decimal,
-        rent_agreement_date: timezone.datetime = None
+        rent_agreement_date: Optional[datetime] = None
     ):
         """
         Создание аренды в транзакции с использованием Django моделей
         """
         try:
-            from .models import Rent, RentItems, Equipment, Client, Staff
-            
-            # Проверяем существование клиента и сотрудника
+            from django.contrib.auth import get_user_model
+            from .models import Rent, RentItems, Equipment, Client
+
+            User = get_user_model()
+
+            # Проверяем существование клиента и пользователя
             client = Client.objects.get(id=client_id)
-            staff = Staff.objects.get(id=staff_id)
+            staff = User.objects.get(id=staff_id)
             
             # Генерируем номер договора
             agreement_number = Rent.generate_agreement_number()
