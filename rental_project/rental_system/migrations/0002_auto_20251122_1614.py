@@ -78,7 +78,7 @@ class Migration(migrations.Migration):
 
         migrations.RunSQL("""
             CREATE OR REPLACE FUNCTION calculate_late_fee(
-                p_rent_id INT,
+                p_rent_id BIGINT,
                 p_penalty_rate NUMERIC DEFAULT 0.1
             )
             RETURNS NUMERIC AS $$
@@ -106,7 +106,7 @@ class Migration(migrations.Migration):
             END;
             $$ LANGUAGE plpgsql;
         """, """
-            DROP FUNCTION IF EXISTS calculate_late_fee(INT, NUMERIC);
+            DROP FUNCTION IF EXISTS calculate_late_fee(BIGINT, NUMERIC);
         """),
 
         migrations.RunSQL("""
@@ -241,7 +241,7 @@ class Migration(migrations.Migration):
 
         migrations.RunSQL("""
             CREATE OR REPLACE VIEW client_rent_view AS
-            SELECT 
+            SELECT
                 cl.id AS client_id,
                 cl.email,
                 cl.phone_number,
@@ -292,7 +292,8 @@ class Migration(migrations.Migration):
                 COALESCE(r.actual_end_date, CURRENT_DATE) AS return_date,
                 e.equipment_name,
                 e.equipment_code,
-                (CURRENT_DATE - r.planned_end_date) AS days_overdue
+                (CURRENT_DATE - r.planned_end_date) AS days_overdue,
+                calculate_late_fee(r.id, 0.1) AS late_fee
             FROM rental_system_rent r
             JOIN rental_system_client cl ON r.client_id = cl.id
             JOIN rental_system_rentitems ri ON ri.rent_id = r.id

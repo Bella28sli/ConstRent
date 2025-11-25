@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Авторизация{% endblock %}
+{% block content %}
+<style>
+    .login-container { max-width: 380px; margin: 0 auto; padding-top: 60px; }
+    .logo-text { font-size: 28px; font-weight: 700; color: var(--accent); text-align: center; margin-bottom: 40px; }
+    .form-control { background: var(--surface); border: none; color: var(--on-surface); height: 42px; }
+    .form-control:focus { background: var(--surface); color: var(--on-surface); border: none; box-shadow: none; }
+    /* фиксируем фон при автозаполнении */
+    input.form-control:-webkit-autofill,
+    input.form-control:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
+        -webkit-text-fill-color: var(--on-surface);
+    }
+    .form-control::placeholder { color: rgba(255, 255, 255, 0.8); }
+    .login-btn { background: var(--accent); border: none; width: 100%; height: 38px; border-radius: 20px; color: var(--on-surface); font-weight: 600; }
+    .small-links a { font-size: 14px; color: var(--text-primary); text-decoration: none; }
+    .small-links a:hover { text-decoration: underline; }
+</style>
+
+<div class="login-container">
+    <div class="logo-text">ConstRent</div>
+    <h3 class="text-center mb-4" style="color:var(--text-primary);">Авторизация</h3>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <input
+            type="text"
+            name="username"
+            class="form-control mb-3"
+            placeholder="Логин"
+            required
+            autofocus
+        >
+
+        <div class="input-group mb-1">
+            <input
+                type="password"
+                name="password"
+                class="form-control"
+                placeholder="Пароль"
+                required
+            >
+        </div>
+
+        {% if form.errors %}
+            <p class="text-danger" style="font-size:14px;">Неверный логин или пароль</p>
+        {% endif %}
+
+        <button type="submit" class="login-btn mt-3">Вход</button>
+    </form>
+
+    <div class="text-center small-links mt-3">
+        <div><a href="{% url 'password_reset' %}">Сброс пароля</a></div>
+    </div>
+</div>
+{% endblock %}

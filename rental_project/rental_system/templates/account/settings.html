@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Настройки аккаунта{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h5 mb-4 text-center">Настройки аккаунта</h1>
+                <form method="post" id="pref-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Тема</label>
+                        {{ form.theme }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Формат даты</label>
+                        {{ form.date_format }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Формат чисел</label>
+                        {{ form.number_format }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Размер страницы</label>
+                        {{ form.page_size }}
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">Сохранить</button>
+                </form>
+                <form class="mt-3 text-center" method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-light btn-sm" onclick="return confirm('Выйти из аккаунта?')">Выйти из аккаунта</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('pref-form');
+        const themeSelect = document.querySelector('select[name="theme"]');
+        if (form && themeSelect) {
+            form.addEventListener('submit', () => {
+                const theme = themeSelect.value;
+                localStorage.setItem("theme_mode", theme);
+                if (window.applyTheme) {
+                    window.applyTheme(theme);
+                } else {
+                    document.documentElement.setAttribute("data-theme", theme);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

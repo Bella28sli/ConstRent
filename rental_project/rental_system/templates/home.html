@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Домашняя{% endblock %}
+{% block content %}
+<div class="row gy-3">
+    <div class="col-12 col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Быстрые действия</h2>
+                <ul class="mb-0">
+                    <li>Ctrl/Cmd + K — поиск</li>
+                    <li>Ctrl/Cmd + N — новая аренда</li>
+                    <li>Ctrl/Cmd + Shift + N — новое оборудование</li>
+                    <li>Ctrl/Cmd + S — сохранить форму</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Старт</h2>
+                <p class="mb-2">Перейдите в меню для работы с клиентами, арендами, оборудованием и обслуживанием.</p>
+                <a class="btn btn-accent" href="{% url 'admin:index' %}">Админ-панель</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

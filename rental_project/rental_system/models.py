@@ -160,8 +160,8 @@ class Equipment(models.Model):
     ]
 
 
-    equipment_name = models.CharField(max_length=200)
-    equipment_code = models.CharField(max_length=100, unique=True)
+    equipment_name = models.CharField(max_length=200, help_text="Название крупногабаритной машины")
+    equipment_code = models.CharField(max_length=100, unique=True, help_text="Уникальный номер оборудования")
     description = models.TextField(blank=True, null=True)
     model = models.ForeignKey(EquipmentModels, on_delete=models.SET_NULL, null=True)
     country = models.ForeignKey(EquipmentCountries, on_delete=models.SET_NULL, null=True)
@@ -175,6 +175,27 @@ class Equipment(models.Model):
 
     def __str__(self):
         return self.equipment_name
+
+    @classmethod
+    def generate_equipment_code(cls, brand: EquipmentBrands, model: EquipmentModels) -> str:
+        """
+        Генерирует код вида BRAND-MODEL-XXXX, где XXXX — следующий номер.
+        """
+        brand_part = (brand.brand if brand else "GEN").upper().replace(" ", "")[:4]
+        model_part = (model.model_name if model else "MODEL").upper().replace(" ", "")[:4]
+        last = (
+            cls.objects.filter(equipment_code__startswith=f"{brand_part}-{model_part}-")
+            .order_by("-equipment_code")
+            .values_list("equipment_code", flat=True)
+            .first()
+        )
+        next_num = 1
+        if last:
+            try:
+                next_num = int(last.split("-")[-1]) + 1
+            except ValueError:
+                next_num = 1
+        return f"{brand_part}-{model_part}-{next_num:04d}"
 
 
 # ---------- Maintenance ----------
