@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}CSV экспорт/импорт{% endblock %}
+{% block content %}
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Экспорт</h2>
+                <form method="get">
+                    <input type="hidden" name="action" value="export">
+                    <div class="mb-3">
+                        <label class="form-label">Сущность</label>
+                        <select name="entity" class="form-select">
+                            <option value="equipment">Оборудование</option>
+                            <option value="clients">Клиенты</option>
+                            <option value="rents">Аренды</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-accent" type="submit">Скачать CSV</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">Импорт</h2>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="import">
+                    <div class="mb-3">
+                        <label class="form-label">Сущность</label>
+                        <select name="entity" class="form-select">
+                            <option value="equipment">Оборудование (название, код, статус)</option>
+                            <option value="clients">Клиенты (email, phone, type)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">CSV файл</label>
+                        <input type="file" name="file" class="form-control" accept=".csv" required>
+                    </div>
+                    <button class="btn btn-accent" type="submit">Загрузить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

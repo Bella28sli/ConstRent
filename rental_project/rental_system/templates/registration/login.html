@@ -6,7 +6,7 @@
     .logo-text { font-size: 28px; font-weight: 700; color: var(--accent); text-align: center; margin-bottom: 40px; }
     .form-control { background: var(--surface); border: none; color: var(--on-surface); height: 42px; }
     .form-control:focus { background: var(--surface); color: var(--on-surface); border: none; box-shadow: none; }
-    /* фиксируем фон при автозаполнении */
+    /* Автофилл под цвета темы */
     input.form-control:-webkit-autofill,
     input.form-control:-webkit-autofill:focus {
         -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
@@ -52,7 +52,7 @@
     </form>
 
     <div class="text-center small-links mt-3">
-        <div><a href="{% url 'password_reset' %}">Сброс пароля</a></div>
+        <div><a href="{% url 'password_reset' %}">Сбросить пароль по почте</a></div>
     </div>
 </div>
 {% endblock %}

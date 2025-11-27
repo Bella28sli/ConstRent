@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Долги по оборудованию{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h5 mb-3">Долги по оборудованию</h1>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Тип</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Договор</th>
+                        <th>Оборудование</th>
+                        <th>Код</th>
+                        <th>Старт</th>
+                        <th>План. возврат</th>
+                        <th>Факт. дата</th>
+                        <th>Дней просрочки</th>
+                        <th>Пеня</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in items %}
+                    <tr>
+                        <td>{{ row.client_name }}</td>
+                        <td>{{ row.client_type }}</td>
+                        <td>{{ row.email }}</td>
+                        <td>{{ row.phone_number }}</td>
+                        <td>{{ row.rent_agreement_number }}</td>
+                        <td>{{ row.equipment_name }}</td>
+                        <td>{{ row.equipment_code }}</td>
+                        <td>{% user_date row.start_date %}</td>
+                        <td>{% user_date row.planned_end_date %}</td>
+                        <td>{% user_date row.return_date %}</td>
+                        <td>{{ row.days_overdue }}</td>
+                        <td>{% user_number row.late_fee %}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="12" class="text-center text-muted">Нет долгов по оборудованию</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Требуется ТО{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h5 mb-3">Оборудование, требующее ТО</h1>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Оборудование</th>
+                        <th>Код</th>
+                        <th>Последняя аренда (факт. окончание)</th>
+                        <th>Последнее ТО</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for eq in items %}
+                    <tr>
+                        <td>{{ eq.equipment_name }}</td>
+                        <td>{{ eq.equipment_code }}</td>
+                        <td>{% user_date eq.last_rent_end %}</td>
+                        <td>{% user_date eq.last_maintenance %}</td>
+                        <td>{{ eq.get_status_display|default:eq.status }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted">Все оборудование прошло ТО</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

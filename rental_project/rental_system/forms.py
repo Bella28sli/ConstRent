@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from datetime import date
 
 from rental_system import models as rm
 
@@ -203,14 +204,18 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ["username", "email", "is_staff", "is_active", "group"]
+        fields = ["first_name", "last_name", "username", "email", "is_staff", "is_active", "group"]
         widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
             "username": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "is_staff": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
         labels = {
+            "first_name": "Имя",
+            "last_name": "Фамилия",
             "username": "Логин",
             "email": "Email",
             "is_staff": "Доступ в админку",
@@ -227,6 +232,26 @@ class UserForm(forms.ModelForm):
             current = instance.groups.filter(name__in=allowed).first() or instance.groups.first()
             if current:
                 self.fields["group"].initial = current
+
+
+class MaintenanceForm(forms.ModelForm):
+    class Meta:
+        model = rm.Maintenance
+        fields = ["maintenance_date", "work_type", "equipment", "description", "status"]
+        widgets = {
+            "maintenance_date": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "work_type": forms.Select(attrs={"class": "form-select"}),
+            "equipment": forms.Select(attrs={"class": "form-select"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "status": forms.Select(attrs={"class": "form-select"}),
+        }
+        labels = {
+            "maintenance_date": "Дата и время ТО",
+            "work_type": "Тип работ",
+            "equipment": "Оборудование",
+            "description": "Описание",
+            "status": "Статус",
+        }
 
 
 # ---------- Addresses ----------
@@ -259,4 +284,102 @@ class AddressForm(forms.ModelForm):
             "building": "Корпус/строение",
             "postal_code": "Индекс",
             "full_address": "Полный адрес",
+        }
+
+
+# ---------- Rents ----------
+class RentCreateForm(forms.ModelForm):
+    equipments = forms.ModelMultipleChoiceField(
+        queryset=rm.Equipment.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        label="Оборудование",
+        required=True,
+    )
+
+    class Meta:
+        model = rm.Rent
+        fields = [
+            "client",
+            "start_date",
+            "planned_end_date",
+            "rent_status",
+            "total_amount",
+            "is_paid",
+        ]
+        widgets = {
+            "client": forms.Select(attrs={"class": "form-select"}),
+            "start_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "planned_end_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "rent_status": forms.Select(attrs={"class": "form-select"}),
+            "total_amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "is_paid": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+        labels = {
+            "client": "Клиент",
+            "start_date": "Дата начала",
+            "planned_end_date": "Дата окончания (план)",
+            "rent_status": "Статус",
+            "total_amount": "Сумма",
+            "is_paid": "Оплачено",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["equipments"].queryset = rm.Equipment.objects.filter(status="available")
+
+    def clean(self):
+        cleaned = super().clean()
+        start = cleaned.get("start_date")
+        end = cleaned.get("planned_end_date")
+        if start and end:
+            if start < date.today():
+                self.add_error("start_date", "Дата начала не может быть в прошлом.")
+            if end < start:
+                self.add_error("planned_end_date", "Дата окончания не может быть раньше даты начала.")
+        return cleaned
+
+
+class RentUpdateForm(RentCreateForm):
+    equipments = forms.ModelMultipleChoiceField(
+        queryset=rm.Equipment.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        label="Оборудование",
+        required=True,
+    )
+
+    class Meta(RentCreateForm.Meta):
+        fields = RentCreateForm.Meta.fields + ["actual_end_date"]
+        widgets = {
+            **RentCreateForm.Meta.widgets,
+            "actual_end_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
+        labels = {
+            **RentCreateForm.Meta.labels,
+            "actual_end_date": "Фактическое окончание",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = kwargs.get("instance")
+        qs = rm.Equipment.objects.filter(status="available")
+        if instance:
+            current_ids = rm.RentItems.objects.filter(rent=instance).values_list("equipment_id", flat=True)
+            qs = rm.Equipment.objects.filter(id__in=current_ids) | qs
+            self.fields["equipments"].initial = current_ids
+        self.fields["equipments"].queryset = qs.distinct()
+
+
+class RentPaymentForm(forms.ModelForm):
+    class Meta:
+        model = rm.Rent
+        fields = ["payment_method", "transaction_number", "payment_date"]
+        widgets = {
+            "payment_method": forms.Select(attrs={"class": "form-select"}),
+            "transaction_number": forms.TextInput(attrs={"class": "form-control"}),
+            "payment_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
+        labels = {
+            "payment_method": "Способ оплаты",
+            "transaction_number": "Транзакция",
+            "payment_date": "Дата оплаты",
         }

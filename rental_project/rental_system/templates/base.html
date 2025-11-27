@@ -1,4 +1,4 @@
-{% load static %}
+{% load static roles %}
 <!DOCTYPE html>
 <html lang="ru" data-theme="light">
 <head>
@@ -18,31 +18,93 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {% comment %}Оборудование{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader,manager" %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Оборудование</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'equipment_home' %}">Главная</a></li>
+                            <li><a class="dropdown-item" href="{% url 'equipment_home' %}">Обзор</a></li>
                             <li><a class="dropdown-item" href="{% url 'equipment_list' %}">Список оборудования</a></li>
-                            <li><a class="dropdown-item" href="{% url 'equipment_countries' %}">Страны-производители</a></li>
+                            {% if user.is_superuser or user|any_group:"admin,leader" %}
+                            <li><a class="dropdown-item" href="{% url 'equipment_countries' %}">Страны</a></li>
                             <li><a class="dropdown-item" href="{% url 'equipment_brands' %}">Бренды</a></li>
                             <li><a class="dropdown-item" href="{% url 'equipment_models' %}">Модели</a></li>
+                            {% endif %}
                         </ul>
                     </li>
+                    {% endif %}
+
+                    {% comment %}Аренды{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader,manager" %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Аренды</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'rent_create' %}">Создать аренду</a></li>
+                            <li><a class="dropdown-item" href="{% url 'rent_list' %}">Все аренды</a></li>
+                            {% if user.is_superuser or user|any_group:"admin,leader" %}
+                            <li><a class="dropdown-item" href="{% url 'rent_payments' %}">Оплаты</a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% comment %}Клиенты и адреса{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader,manager" %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Клиенты</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'clients' %}">Список клиентов</a></li>
+                            <li><a class="dropdown-item" href="{% url 'client_rent_history' %}">История аренды</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'addresses' %}">Адреса</a></li>
+                    {% endif %}
+
+                    {% comment %}Пользователи{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader" %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'users' %}">Пользователи</a></li>
+                    {% endif %}
+
+                    {% comment %}ТО{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader,technician" %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">ТО</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'maintenance' %}">Календарь ТО</a></li>
+                            <li><a class="dropdown-item" href="{% url 'maintenance_required' %}">Требуется ТО</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% comment %}Должники{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader" %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Должники</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'monetary_debts' %}">Долги по оплате</a></li>
+                            <li><a class="dropdown-item" href="{% url 'equipment_debts' %}">Долги по оборудованию</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+
+                    {% comment %}CSV/Бэкапы/Логи{% endcomment %}
+                    {% if user.is_superuser or user|any_group:"admin,leader" %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'clients' %}">Клиенты</a>
+                        <a class="nav-link" href="{% url 'csv_import_export' %}">CSV импорт/экспорт</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'addresses' %}">Адреса</a>
+                        <a class="nav-link" href="{% url 'backup_list' %}">Бэкапы</a>
                     </li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'logs' %}">Логи</a></li>
+                    {% if grafana_dashboard_url %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users' %}">Пользователи</a>
+                        <a class="nav-link" href="{{ grafana_dashboard_url }}" target="_blank" rel="noopener">Графики (Grafana)</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'logs' %}">Логи</a>
-                    </li>
+                    {% endif %}
+                    {% endif %}
                 </ul>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="navbar-text me-1 text-light">Привет, {{ user.username }}</span>
+                    <span class="navbar-text me-1 text-light">Вы вошли как {{ user.first_name }}</span>
                     <a class="btn btn-outline-light btn-sm" href="{% url 'account_settings' %}">Настройки</a>
                 </div>
             </div>
@@ -64,11 +126,17 @@
     <footer class="mt-auto py-3 bg-accent text-light">
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
             <span class="fw-bold">ConstRent — сервис аренды оборудования</span>
-            <span class="small">Горячие клавиши: Ctrl/Cmd+K — поиск; Ctrl/Cmd+N — новая запись; Ctrl/Cmd+S — сохранить</span>
+            <span class="small">
+                Контакты:
+                <a class="link-light" href="mailto:izabellaslivina@gmail.com">izabellaslivina@gmail.com</a>
+                и
+                <a class="link-light" href="tel:+79854180121">+7 985 418-01-21</a>
+            </span>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/theme.js' %}"></script>
+    <script src="{% static 'js/hotkeys.js' %}"></script>
 </body>
 </html>

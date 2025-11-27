@@ -1,26 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Домашняя{% endblock %}
+{% block title %}Главная{% endblock %}
 {% block content %}
 <div class="row gy-3">
     <div class="col-12 col-md-6">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5">Быстрые действия</h2>
+                <h2 class="h5">Горячие клавиши</h2>
                 <ul class="mb-0">
-                    <li>Ctrl/Cmd + K — поиск</li>
-                    <li>Ctrl/Cmd + N — новая аренда</li>
-                    <li>Ctrl/Cmd + Shift + N — новое оборудование</li>
-                    <li>Ctrl/Cmd + S — сохранить форму</li>
+                    <li><strong>Alt + H</strong> — главная</li>
+                    <li><strong>Alt + E</strong> — оборудование</li>
+                    <li><strong>Alt + R</strong> — создать аренду</li>
+                    <li><strong>Alt + L</strong> — все аренды</li>
+                    <li><strong>Alt + P</strong> — оплаты аренды</li>
+                    <li><strong>Alt + C</strong> — клиенты</li>
+                    <li><strong>Alt + K</strong> — история аренды клиента</li>
+                    <li><strong>Alt + D</strong> — долги по оплате</li>
+                    <li><strong>Alt + B</strong> — долги по оборудованию</li>
+                    <li><strong>Alt + M</strong> — ТО (календарь)</li>
+                    <li><strong>Alt + U</strong> — требуется ТО</li>
+                    <li><strong>Alt + O</strong> — CSV импорт/экспорт</li>
+                    <li><strong>Alt + S</strong> — настройки профиля</li>
+                    <li><strong>Alt + T</strong> — переключить тему</li>
+                    <li><strong>Alt + F</strong> — перейти к поиску</li>
                 </ul>
             </div>
         </div>
     </div>
     <div class="col-12 col-md-6">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5">Старт</h2>
-                <p class="mb-2">Перейдите в меню для работы с клиентами, арендами, оборудованием и обслуживанием.</p>
-                <a class="btn btn-accent" href="{% url 'admin:index' %}">Админ-панель</a>
+                <h2 class="h5">Администрирование</h2>
+                <p class="mb-2">Управляйте всеми сущностями через веб-интерфейс: оборудование, аренды, клиенты, ТО, долги и резервные копии.</p>
+                <a class="btn btn-accent" href="{% url 'admin:index' %}">Перейти в админ-панель</a>
             </div>
         </div>
     </div>

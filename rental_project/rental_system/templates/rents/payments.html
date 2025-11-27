@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Оплата аренд{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h5 mb-3">Неоплаченные аренды</h1>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Договор</th>
+                        <th>Клиент</th>
+                        <th>Старт</th>
+                        <th>План. конец</th>
+                        <th>Сумма</th>
+                        <th>Оплата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for r in rents %}
+                    <tr>
+                        <td>{{ r.rent_agreement_number }}</td>
+                        <td>{{ r.client }}</td>
+                        <td>{% user_date r.start_date %}</td>
+                        <td>{% user_date r.planned_end_date %}</td>
+                        <td>{% user_number r.total_amount %}</td>
+                        <td>
+                            <form method="post" class="row g-2 align-items-end">
+                                {% csrf_token %}
+                                <input type="hidden" name="rent_id" value="{{ r.id }}">
+                                <div class="col-12 col-md-3">
+                                    {{ form.payment_method.label_tag }}
+                                    {{ form.payment_method }}
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    {{ form.transaction_number.label_tag }}
+                                    {{ form.transaction_number }}
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    {{ form.payment_date.label_tag }}
+                                    {{ form.payment_date }}
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <button class="btn btn-accent btn-sm w-100" type="submit">Оплатить</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted">Нет неоплаченных аренд</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

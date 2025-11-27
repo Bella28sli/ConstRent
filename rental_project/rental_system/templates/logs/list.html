@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load formatting %}
 {% block title %}Логи{% endblock %}
 {% block content %}
 <div class="card shadow-sm">
@@ -55,7 +56,7 @@
                 <tbody>
                 {% for log in logs %}
                     <tr>
-                        <td>{{ log.log_date|date:"Y-m-d H:i:s" }}</td>
+                        <td>{% user_date log.log_date %}</td>
                         <td>{{ log.staff.username|default:"—" }}</td>
                         <td>{{ log.action_type }}</td>
                         <td>
@@ -97,5 +98,5 @@
         </nav>
         {% endif %}
     </div>
-</div>
+    </div>
 {% endblock %}

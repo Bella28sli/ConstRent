@@ -7,10 +7,15 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+PROMETHEUS_METRICS_DIR = BASE_DIR / 'prometheus_multiproc_dir'
+os.makedirs(PROMETHEUS_METRICS_DIR, exist_ok=True)
+
+os.environ['PROMETHEUS_MULTIPROC_DIR'] = str(PROMETHEUS_METRICS_DIR)
+
 # Security (временно без вынесения в env)
 SECRET_KEY = 'django-insecure-h)=g1)3cy9e&&6a-!#-zk@rl^dpp@*@1k$uua!l7=)ov1@q!v&'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 INSTALLED_APPS = [
@@ -20,20 +25,26 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_prometheus',
     'rental_system',
     'rest_framework',
+    'api',
+    'backups',
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'rental_system.middleware.CurrentUserToDBMiddleware',
+    'rental_system.middleware.HttpErrorMetricsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'rental_system.middleware.CurrentUserToDBMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'rental_project.urls'
@@ -48,6 +59,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'rental_system.context_processors.user_preferences',
+                'rental_system.context_processors.monitoring_links',
             ],
         },
     },
@@ -62,7 +75,8 @@ DATABASES = {
         'NAME': 'rental_system_db',
         'USER': 'postgres',
         'PASSWORD': '1',
-        'HOST': 'localhost',
+        # В контейнере обращаемся по имени сервиса docker-compose
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
         'PORT': '5432',
     }
 }
@@ -98,6 +112,8 @@ USE_TZ = True
 
 # Static/media files
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -112,9 +128,11 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Email backend (для восстановления пароля отправляем в консоль)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.mailomat.cloud"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "izabellaslivina@gmail.com"          # логин/почта от mailomat
-EMAIL_HOST_PASSWORD = "BJAlex808080"     # пароль/токен SMTP
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# SMTP через Gmail (используйте пароль приложения, а не основной пароль аккаунта)
+EMAIL_HOST = "smtp.resend.com"
+EMAIL_PORT = 465
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = "resend"
+EMAIL_HOST_PASSWORD = "re_dQV8rEv9_6N95q8aNRvQQWZJxAQjYg9BD"  # пароль приложения Gmail (без пробелов)
+DEFAULT_FROM_EMAIL = "isabellaslivina@gmail.com"

@@ -4,7 +4,7 @@
 <div class="row gy-3">
     <div class="col-12">
         <button class="btn btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filters" aria-expanded="false">
-            Фильтры и поиск
+            Показать/скрыть фильтры
         </button>
         <div class="collapse" id="filters">
             <div class="card shadow-sm mb-3">
@@ -17,7 +17,7 @@
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label">Статус</label>
                             <select name="status" class="form-select">
-                                <option value="">Любой</option>
+                                <option value="">Все</option>
                                 {% for key, val in form.fields.status.choices %}
                                     <option value="{{ key }}" {% if request.GET.status == key %}selected{% endif %}>{{ val }}</option>
                                 {% endfor %}
@@ -26,7 +26,7 @@
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label">Бренд</label>
                             <select name="brand" class="form-select">
-                                <option value="">Любой</option>
+                                <option value="">Все</option>
                                 {% for b in brands %}
                                     <option value="{{ b.id }}" {% if request.GET.brand == b.id|stringformat:'s' %}selected{% endif %}>{{ b.brand }}</option>
                                 {% endfor %}
@@ -35,7 +35,7 @@
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label">Страна</label>
                             <select name="country" class="form-select">
-                                <option value="">Любая</option>
+                                <option value="">Все</option>
                                 {% for c in countries %}
                                     <option value="{{ c.id }}" {% if request.GET.country == c.id|stringformat:'s' %}selected{% endif %}>{{ c.country }}</option>
                                 {% endfor %}
@@ -44,7 +44,7 @@
                         <div class="col-12 col-md-6 col-lg-3">
                             <label class="form-label">Модель</label>
                             <select name="model" class="form-select">
-                                <option value="">Любая</option>
+                                <option value="">Все</option>
                                 {% for m in models %}
                                     <option value="{{ m.id }}" {% if request.GET.model == m.id|stringformat:'s' %}selected{% endif %}>{{ m.model_name }}</option>
                                 {% endfor %}
@@ -91,43 +91,41 @@
     <div class="col-12 col-lg-8">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h2 class="h5 mb-3">Список оборудования</h2>
-                <div class="table-responsive">
-                    <table class="table table-striped align-middle">
-                        <thead>
-                            <tr>
-                                <th>Название</th>
-                                <th>Код</th>
-                                <th>Модель</th>
-                                <th>Бренд</th>
-                                <th>Страна</th>
-                                <th>Статус</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for e in equipments %}
-                            <tr>
-                                <td>{{ e.equipment_name }}</td>
-                                <td>{{ e.equipment_code }}</td>
-                                <td>{{ e.model }}</td>
-                                <td>{{ e.brand }}</td>
-                                <td>{{ e.country }}</td>
-                                <td>{{ e.get_status_display }}</td>
-                                <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-primary" href="?edit_id={{ e.id }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.brand %}&brand={{ request.GET.brand }}{% endif %}{% if request.GET.country %}&country={{ request.GET.country }}{% endif %}{% if request.GET.model %}&model={{ request.GET.model }}{% endif %}">Изменить</a>
+                <h2 class="h5 mb-3">Каталог оборудования</h2>
+                <div class="row g-3">
+                    {% for e in equipments %}
+                    <div class="col-12 col-md-6">
+                        <div class="card h-100 shadow-sm">
+                            {% if e.image %}
+                                <img src="{{ e.image.url }}" class="card-img-top" alt="{{ e.equipment_name }}" style="object-fit: cover; height: 180px;">
+                            {% else %}
+                                <div class="bg-surface border-bottom d-flex align-items-center justify-content-center" style="height:180px;">
+                                    <span class="text-muted">Нет фото</span>
+                                </div>
+                            {% endif %}
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title mb-1">{{ e.equipment_name }}</h5>
+                                <p class="mb-1 small text-muted">Код: {{ e.equipment_code }}</p>
+                                <p class="mb-1">Модель: {{ e.model }}</p>
+                                <p class="mb-1">Бренд: {{ e.brand }}</p>
+                                <p class="mb-1">Страна: {{ e.country }}</p>
+                                <span class="badge bg-secondary align-self-start mb-2">{{ e.get_status_display }}</span>
+                                <div class="mt-auto d-flex justify-content-between">
+                                    <a class="btn btn-sm btn-outline-primary btn-action" href="?edit_id={{ e.id }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.brand %}&brand={{ request.GET.brand }}{% endif %}{% if request.GET.country %}&country={{ request.GET.country }}{% endif %}{% if request.GET.model %}&model={{ request.GET.model }}{% endif %}">Изменить</a>
                                     <form method="post" class="d-inline">
                                         {% csrf_token %}
                                         <input type="hidden" name="delete_id" value="{{ e.id }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить оборудование?')">Удалить</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-action" onclick="return confirm('Удалить оборудование?')">Удалить</button>
                                     </form>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="7" class="text-center text-muted">Нет данных</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="text-center text-muted">Оборудования нет.</div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

@@ -31,11 +31,11 @@
                             <tr>
                                 <td>{{ m.model_name }}</td>
                                 <td class="text-end">
-                                    <a class="btn btn-sm btn-outline-light" href="?edit_id={{ m.id }}">Изменить</a>
+                                    <a class="btn btn-sm btn-outline-light btn-action" href="?edit_id={{ m.id }}">Изменить</a>
                                     <form method="post" class="d-inline">
                                         {% csrf_token %}
                                         <input type="hidden" name="delete_id" value="{{ m.id }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить модель?')">Удалить</button>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger btn-action" onclick="return confirm('Удалить модель?')">Удалить</button>
                                     </form>
                                 </td>
                             </tr>

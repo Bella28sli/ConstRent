@@ -3,7 +3,7 @@
 {% block content %}
 <div class="row g-3">
     <div class="col-12 col-lg-7">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-2 mb-3">
                     <h1 class="h4 mb-0">Пользователи</h1>
@@ -23,9 +23,11 @@
                         <thead>
                             <tr>
                                 <th>Логин</th>
+                                <th>Имя</th>
+                                <th>Фамилия</th>
                                 <th>Email</th>
-                                <th>Статус</th>
-                                <th>Роль</th>
+                                <th>Статусы</th>
+                                <th>Группа</th>
                                 <th class="text-end">Действия</th>
                             </tr>
                         </thead>
@@ -33,23 +35,25 @@
                         {% for u in users %}
                             <tr>
                                 <td>{{ u.username }}</td>
+                                <td>{{ u.first_name }}</td>
+                                <td>{{ u.last_name }}</td>
                                 <td>{{ u.email }}</td>
                                 <td>
-                                    {% if u.is_active %}<span class="badge bg-success">Активен</span>{% else %}<span class="badge bg-secondary">Неактивен</span>{% endif %}
-                                    {% if u.is_staff %}<span class="badge bg-info text-dark ms-1">Админ</span>{% endif %}
+                                    {% if u.is_active %}<span class="badge bg-success">Активен</span>{% else %}<span class="badge bg-secondary">Отключён</span>{% endif %}
+                                    {% if u.is_staff %}<span class="badge bg-info text-dark ms-1">Сотрудник</span>{% endif %}
                                 </td>
                                 <td>{{ u.groups.all|first }}</td>
                                 <td class="text-end">
-                                    <a class="btn btn-outline-primary btn-sm" href="?edit_id={{ u.id }}">Изменить</a>
+                                    <a class="btn btn-outline-primary btn-sm btn-action" href="?edit_id={{ u.id }}">Изменить</a>
                                     <form method="post" class="d-inline">
                                         {% csrf_token %}
                                         <input type="hidden" name="delete_id" value="{{ u.id }}">
-                                        <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Удалить пользователя?')">Удалить</button>
+                                        <button class="btn btn-outline-danger btn-sm btn-action" type="submit" onclick="return confirm('Удалить пользователя?')">Удалить</button>
                                     </form>
                                 </td>
                             </tr>
                         {% empty %}
-                            <tr><td colspan="4" class="text-center text-muted">Нет данных</td></tr>
+                            <tr><td colspan="7" class="text-center text-muted">Пользователей нет</td></tr>
                         {% endfor %}
                         </tbody>
                     </table>
@@ -59,12 +63,20 @@
     </div>
 
     <div class="col-12 col-lg-5">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm h-100">
             <div class="card-body">
                 <h2 class="h5">{% if edit_id %}Редактирование пользователя{% else %}Новый пользователь{% endif %}</h2>
                 <form method="post" class="mt-3">
                     {% csrf_token %}
                     {% if edit_id %}<input type="hidden" name="edit_id" value="{{ edit_id }}">{% endif %}
+                    <div class="mb-3">
+                        {{ form.first_name.label_tag }}
+                        {{ form.first_name }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.last_name.label_tag }}
+                        {{ form.last_name }}
+                    </div>
                     <div class="mb-3">
                         {{ form.username.label_tag }}
                         {{ form.username }}
@@ -77,11 +89,6 @@
                     <div class="mb-3">
                         {{ form.email.label_tag }}
                         {{ form.email }}
-                    </div>
-                    <div class="mb-3">
-                        {{ form.role.label_tag }}
-                        {{ form.role }}
-                        {% if form.role.help_text %}<div class="form-text">{{ form.role.help_text }}</div>{% endif %}
                     </div>
                     <div class="mb-3">
                         {{ form.password.label_tag }}

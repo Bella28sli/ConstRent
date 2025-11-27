@@ -28,12 +28,12 @@
                                 <td>{{ a.full_address }}</td>
                                 <td>{{ a.city }}</td>
                                 <td class="text-end">
-                                    <a class="btn btn-outline-primary btn-sm" href="?edit_id={{ a.id }}">Изменить</a>
-                                    <form method="post" class="d-inline">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="delete_id" value="{{ a.id }}">
-                                        <button class="btn btn-outline-danger btn-sm" type="submit" onclick="return confirm('Удалить адрес?')">Удалить</button>
-                                    </form>
+                                <a class="btn btn-outline-primary btn-sm btn-action" href="?edit_id={{ a.id }}">Изменить</a>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delete_id" value="{{ a.id }}">
+                                    <button class="btn btn-outline-danger btn-sm btn-action" type="submit" onclick="return confirm('Удалить адрес?')">Удалить</button>
+                                </form>
                                 </td>
                             </tr>
                         {% empty %}

@@ -8,10 +8,10 @@
 }
 
 [data-theme="dark"] {
-    --background: #121212;
+    --background: #0d1117;
     --accent: #4C6DFF;
     --text-primary: #D2D0FF;
-    --surface: #1E2A35;
+    --surface: #1b2633; /* чуть светлее для полей/карточек */
     --error-text: #FF6B6B;
     --on-surface: #FFFFFF;
 }
@@ -51,6 +51,30 @@ body {
 .card-body {
     background: var(--surface);
     color: var(--on-surface);
+}
+
+/* Темная тема: перекрашиваем инпуты/селекты/таблицы поверх bootstrap */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .input-group-text {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    border-color: #324257; /* более заметная граница */
+}
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem rgba(76, 109, 255, 0.25);
+}
+[data-theme="dark"] .table > :not(caption) > * > * {
+    background-color: #131a24;
+    color: var(--on-surface);
+    border-color: #324257;
+}
+[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: #0e1520;
 }
 
 /* Login page */
@@ -102,4 +126,9 @@ input.form-control.login-field:-webkit-autofill:focus {
 }
 .small-links a:hover {
     text-decoration: underline;
+}
+
+/* Унифицированные кнопки действий */
+.btn-action {
+    min-width: 110px;
 }
