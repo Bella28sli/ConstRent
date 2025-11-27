@@ -1,0 +1,46 @@
+{% load formatting %}
+{% extends "base.html" %}
+{% block title %}Долги по оплате{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h5 mb-3">Долги по оплате</h1>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Тип</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Договор</th>
+                        <th>Сумма</th>
+                        <th>Начало</th>
+                        <th>План. окончание</th>
+                        <th>Факт. окончание</th>
+                        <th>Дней аренды</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in items %}
+                    <tr>
+                        <td>{{ row.client_name }}</td>
+                        <td>{{ row.client_type }}</td>
+                        <td>{{ row.email }}</td>
+                        <td>{{ row.phone_number }}</td>
+                        <td>{{ row.rent_agreement_number }}</td>
+                        <td>{% user_number row.total_amount %}</td>
+                        <td>{% user_date row.start_date %}</td>
+                        <td>{% user_date row.planned_end_date %}</td>
+                        <td>{% user_date row.actual_end_date %}</td>
+                        <td>{{ row.rent_duration_days }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="10" class="text-center text-muted">Нет долгов по оплате</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
