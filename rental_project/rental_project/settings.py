@@ -42,6 +42,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'rental_system.middleware.CurrentUserToDBMiddleware',
     'rental_system.middleware.HttpErrorMetricsMiddleware',
+    'rental_system.middleware.ActionLogMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_prometheus.middleware.PrometheusAfterMiddleware',

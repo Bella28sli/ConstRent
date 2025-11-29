@@ -8,8 +8,10 @@ from django.core.paginator import Paginator
 from datetime import datetime
 from django.db import connection
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 import csv
 from django.http import HttpResponse
+from django.contrib import messages
 from django.conf import settings
 import os
 from django.db.models import OuterRef, Subquery, Max, F, Q as DJ_Q
@@ -727,8 +729,29 @@ class RequiredMaintenanceView(RoleRequiredMixin, TemplateView):
 
 
 class ClientRentHistoryView(RoleRequiredMixin, TemplateView):
-    allowed_roles = {"manager"}
+    allowed_roles = {"admin", "manager"}
     template_name = "clients/history.html"
+
+    def _history_fallback(self, client_id: int):
+        rents = (
+            Rent.objects.filter(client_id=client_id)
+            .prefetch_related("rentitems_set__equipment")
+            .order_by("-start_date")
+        )
+        rows = []
+        for r in rents:
+            eq_names = ", ".join(ri.equipment.equipment_name for ri in r.rentitems_set.all())
+            rows.append(
+                {
+                    "agreement_number": r.rent_agreement_number,
+                    "start_date": r.start_date,
+                    "end_date": r.actual_end_date or r.planned_end_date,
+                    "equipment_names": eq_names,
+                    "total_amount": r.total_amount,
+                    "status": r.get_rent_status_display(),
+                }
+            )
+        return rows
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -738,7 +761,7 @@ class ClientRentHistoryView(RoleRequiredMixin, TemplateView):
             try:
                 history = RentalService.get_client_rental_history(int(client_id))
             except Exception:
-                history = []
+                history = self._history_fallback(int(client_id))
         ctx["clients"] = Client.objects.all()
         ctx["history"] = history
         ctx["selected_client_id"] = client_id
@@ -871,11 +894,12 @@ class BackupListView(RoleRequiredMixin, TemplateView):
         backup_dir = getattr(settings, "BACKUP_DIR", None)
         if action == "create" and backup_dir:
             os.makedirs(backup_dir, exist_ok=True)
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"backup_{ts}.bak"
-            path = os.path.join(backup_dir, filename)
-            with open(path, "w", encoding="utf-8") as f:
-                f.write(f"Backup placeholder created at {ts}")
+            try:
+                # plain SQL, UTF-8: читаемый .bak
+                call_command("backup_db", output_dir=str(backup_dir))
+                messages.success(request, "Бэкап создан (SQL UTF-8).")
+            except Exception as exc:  # pragma: no cover
+                messages.error(request, f"Не удалось создать бэкап: {exc}")
         return redirect("backup_list")
 
     def get_context_data(self, **kwargs):

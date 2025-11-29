@@ -95,6 +95,24 @@ class EquipmentForm(forms.ModelForm):
         }
 
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["equipment_code"].required = False
+        self.fields["equipment_code"].widget.attrs.setdefault("placeholder", "Авто")
+
+    def clean(self):
+        cleaned = super().clean()
+        brand = cleaned.get("brand")
+        model = cleaned.get("model")
+        code = cleaned.get("equipment_code")
+        if not code:
+            if not brand or not model:
+                self.add_error("equipment_code", "Чтобы сгенерировать код, выберите бренд и модель.")
+            else:
+                cleaned["equipment_code"] = rm.Equipment.generate_equipment_code(brand, model)
+        return cleaned
+
+
 class ClientForm(forms.ModelForm):
     class Meta:
         model = rm.Client
@@ -311,7 +329,7 @@ class RentCreateForm(forms.ModelForm):
             "start_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "planned_end_date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "rent_status": forms.Select(attrs={"class": "form-select"}),
-            "total_amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "total_amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "placeholder": "Рассчитать"}),
             "is_paid": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
         labels = {
@@ -326,6 +344,7 @@ class RentCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["equipments"].queryset = rm.Equipment.objects.filter(status="available")
+        self.fields["total_amount"].required = False
 
     def clean(self):
         cleaned = super().clean()
@@ -333,9 +352,15 @@ class RentCreateForm(forms.ModelForm):
         end = cleaned.get("planned_end_date")
         if start and end:
             if start < date.today():
-                self.add_error("start_date", "Дата начала не может быть в прошлом.")
+                self.add_error("start_date", "���� ������ �� ����� ���� � �������.")
             if end < start:
-                self.add_error("planned_end_date", "Дата окончания не может быть раньше даты начала.")
+                self.add_error("planned_end_date", "���� ��������� �� ����� ���� ������ ���� ������.")
+        # ���������� �����, ���� ���� ������
+        equipments = cleaned.get("equipments")
+        if cleaned.get("total_amount") in [None, ""] and equipments and start and end:
+            cleaned["total_amount"] = rm.RentalService.calculate_rental_cost([eq.id for eq in equipments], start, end)
+        return cleaned
+        return cleaned
         return cleaned
 
 

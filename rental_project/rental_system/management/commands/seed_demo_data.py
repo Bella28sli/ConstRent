@@ -157,9 +157,15 @@ class Command(BaseCommand):
             ("Bulldozer CAT D7R", models[0], countries[0], brands[0], 210.0, 24000, "diesel", 26000),
             ("Excavator Komatsu PC210", models[3], countries[1], brands[1], 200.0, 23000, "diesel", 24500),
         ]
-        for name, model_obj, country, brand, power, weight, fuel, price in equipment_seed:
-            code = rm.Equipment.generate_equipment_code(brand, model_obj)
-            eq, _ = rm.Equipment.objects.get_or_create(
+
+        def seed_equipment_code(brand, model, idx):
+            brand_part = (brand.brand if brand else "GEN").upper().replace(" ", "")[:4]
+            model_part = (model.model_name if model else "MODEL").upper().replace(" ", "")[:4]
+            return f"{brand_part}-{model_part}-{idx+1:04d}"
+
+        for idx, (name, model_obj, country, brand, power, weight, fuel, price) in enumerate(equipment_seed):
+            code = seed_equipment_code(brand, model_obj, idx)
+            eq, _ = rm.Equipment.objects.update_or_create(
                 equipment_code=code,
                 defaults={
                     "equipment_name": name,
@@ -243,24 +249,27 @@ class Command(BaseCommand):
             (clients[14], equipments[13:15], date.today() - timedelta(days=6), date.today() + timedelta(days=12), None, "extended", True),
         ]
 
-        for client, eq_list, start, planned_end, actual_end, status, paid in rent_seed:
+        for idx, (client, eq_list, start, planned_end, actual_end, status, paid) in enumerate(rent_seed):
             if not eq_list:
                 continue
             total = RentalService.calculate_rental_cost([e.id for e in eq_list], start, planned_end)
-            agreement_number = rm.Rent.generate_agreement_number()
-            rent = rm.Rent.objects.create(
+            agreement_number = f"SEED-{idx+1:04d}"
+            rent, _ = rm.Rent.objects.update_or_create(
                 rent_agreement_number=agreement_number,
-                client=client,
-                staff=users.get("manager"),
-                rent_agreement_date=start,
-                start_date=start,
-                planned_end_date=planned_end,
-                actual_end_date=actual_end,
-                rent_status=status,
-                total_amount=total,
-                is_paid=paid,
-                payment_date=date.today() if paid else None,
+                defaults={
+                    "client": client,
+                    "staff": users.get("manager"),
+                    "rent_agreement_date": start,
+                    "start_date": start,
+                    "planned_end_date": planned_end,
+                    "actual_end_date": actual_end,
+                    "rent_status": status,
+                    "total_amount": total,
+                    "is_paid": paid,
+                    "payment_date": date.today() if paid else None,
+                },
             )
+            rm.RentItems.objects.filter(rent=rent).delete()
             for eq in eq_list:
                 rm.RentItems.objects.get_or_create(rent=rent, equipment=eq)
                 eq.status = "available" if status == "completed" else "rented"

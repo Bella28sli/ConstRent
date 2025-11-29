@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load roles %}
 {% block title %}Создание аренды{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
@@ -14,7 +15,15 @@
                     {% for field in form %}
                         <div class="mb-3">
                             {{ field.label_tag }}
-                            {{ field }}
+                            {% if field.name == "total_amount" %}
+                                <div class="input-group">
+                                    {{ field }}
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="autoTotal();">Рассчитать</button>
+                                </div>
+                                <div class="form-text">Поле можно оставить пустым — сумма рассчитается автоматически.</div>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
                         </div>
@@ -25,4 +34,14 @@
         </div>
     </div>
 </div>
+<script>
+function autoTotal() {
+    const total = document.querySelector('input[name="total_amount"]');
+    if (total) {
+        total.value = "";
+        total.placeholder = "Будет рассчитано";
+        {% if user|has_group:"manager" %}total.readOnly = true;{% endif %}
+    }
+}
+</script>
 {% endblock %}

@@ -76,6 +76,9 @@ body {
 [data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
     background-color: #0e1520;
 }
+[data-theme="dark"] .form-text {
+    color: rgba(255, 255, 255, 0.8);
+}
 
 /* Login page */
 .login-container {

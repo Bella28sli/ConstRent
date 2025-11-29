@@ -39,14 +39,15 @@ class Command(BaseCommand):
 
         file_prefix = options["file_prefix"] or db_settings.get("NAME", "db")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = output_dir / f"{file_prefix}_{timestamp}.dump"
+        backup_path = output_dir / f"{file_prefix}_{timestamp}.bak"
 
         host = db_settings.get("HOST") or "localhost"
         port = str(db_settings.get("PORT") or "5432")
         user = db_settings.get("USER") or ""
         db_name = db_settings.get("NAME") or ""
 
-        cmd = ["pg_dump", "-h", host, "-p", port, "-F", "c", "-f", str(backup_path)]
+        # plain SQL, UTF-8, чтобы файл читался как текст (не «битая кодировка»)
+        cmd = ["pg_dump", "-h", host, "-p", port, "--encoding", "UTF8", "-F", "p", "-f", str(backup_path)]
         if user:
             cmd.extend(["-U", user])
         cmd.append(db_name)
@@ -72,7 +73,7 @@ class Command(BaseCommand):
             return
 
         backups = sorted(
-            output_dir.glob(f"{prefix}_*.dump"),
+            output_dir.glob(f"{prefix}_*.bak"),
             key=lambda path: path.stat().st_mtime,
             reverse=True,
         )

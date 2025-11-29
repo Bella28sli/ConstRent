@@ -1,5 +1,7 @@
 from django.db import connection
+from django.utils.deprecation import MiddlewareMixin
 from .metrics import http_errors_total
+from rental_system.models import Log
 
 
 class CurrentUserToDBMiddleware:
@@ -42,6 +44,47 @@ class HttpErrorMetricsMiddleware:
             status = response.status_code
             if status >= 400:
                 http_errors_total.labels(str(status)).inc()
+        except Exception:
+            pass
+        return response
+
+
+class ActionLogMiddleware(MiddlewareMixin):
+    """
+    Универсальный лог: фиксируем большинство действий по HTTP-методам.
+    GET  -> VIEW, POST -> CREATE, PUT/PATCH -> UPDATE, DELETE -> DELETE.
+    Для путей с export/download — DOWNLOAD, import/upload — UPLOAD.
+    """
+
+    def process_response(self, request, response):
+        try:
+            user = getattr(request, "user", None)
+            if not user or not user.is_authenticated:
+                return response
+
+            path = request.path or ""
+            if path.startswith("/static") or path.startswith("/prometheus"):
+                return response
+
+            method = request.method.upper()
+            action = Log.ActionType.VIEW
+            if any(k in path for k in ["export", "download", "backup"]):
+                action = Log.ActionType.DOWNLOAD
+            elif any(k in path for k in ["import", "upload"]):
+                action = Log.ActionType.UPLOAD
+            elif method == "POST":
+                action = Log.ActionType.CREATE
+            elif method in ("PUT", "PATCH"):
+                action = Log.ActionType.UPDATE
+            elif method == "DELETE":
+                action = Log.ActionType.DELETE
+
+            Log.objects.create(
+                staff=user,
+                action_type=action,
+                description_text=f"{method} {path}",
+                success_status=response.status_code < 400,
+            )
         except Exception:
             pass
         return response

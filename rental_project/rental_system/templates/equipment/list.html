@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load roles %}
 {% block title %}Оборудование{% endblock %}
 {% block content %}
 <div class="row gy-3">
@@ -77,7 +78,15 @@
                     {% for field in form %}
                         <div class="mb-2">
                             {{ field.label_tag }}
-                            {{ field }}
+                            {% if field.name == "equipment_code" %}
+                                <div class="input-group">
+                                    {{ field }}
+                                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="autoCode();">Сгенерировать</button>
+                                </div>
+                                <div class="form-text">Можно оставить пустым — код создастся автоматически.</div>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
                             {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                             {% if field.errors %}<div class="text-danger small">{{ field.errors|striptags }}</div>{% endif %}
                         </div>
@@ -131,4 +140,14 @@
         </div>
     </div>
 </div>
+<script>
+function autoCode() {
+    const code = document.querySelector('input[name="equipment_code"]');
+    if (code) {
+        code.value = "";
+        code.placeholder = "Будет сгенерирован";
+        {% if user|has_group:"manager" %}code.readOnly = true;{% endif %}
+    }
+}
+</script>
 {% endblock %}

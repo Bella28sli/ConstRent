@@ -5,30 +5,30 @@
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h1 class="h5 mb-4 text-center">Настройки аккаунта</h1>
+                <h1 class="h5 mb-4 text-center"><i class="bi bi-sliders me-2"></i>Настройки аккаунта</h1>
                 <form method="post" id="pref-form">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label class="form-label">Тема</label>
+                        <label class="form-label"><i class="bi bi-palette me-1"></i>Тема</label>
                         {{ form.theme }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Формат даты</label>
+                        <label class="form-label"><i class="bi bi-calendar3 me-1"></i>Формат даты</label>
                         {{ form.date_format }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Формат чисел</label>
+                        <label class="form-label"><i class="bi bi-123 me-1"></i>Формат чисел</label>
                         {{ form.number_format }}
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Размер страницы</label>
+                        <label class="form-label"><i class="bi bi-list-ol me-1"></i>Размер страницы</label>
                         {{ form.page_size }}
                     </div>
-                    <button type="submit" class="btn btn-accent w-100">Сохранить</button>
+                    <button type="submit" class="btn btn-accent w-100"><i class="bi bi-check2-circle me-1"></i>Сохранить</button>
                 </form>
                 <form class="mt-3 text-center" method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-light btn-sm" onclick="return confirm('Выйти из аккаунта?')">Выйти из аккаунта</button>
+                    <button type="submit" class="btn btn-outline-light btn-sm" onclick="return confirm('Выйти из аккаунта?')"><i class="bi bi-box-arrow-right me-1"></i>Выйти из аккаунта</button>
                 </form>
             </div>
         </div>
