@@ -12,10 +12,10 @@ os.makedirs(PROMETHEUS_METRICS_DIR, exist_ok=True)
 
 os.environ['PROMETHEUS_MULTIPROC_DIR'] = str(PROMETHEUS_METRICS_DIR)
 
-# Security (временно без вынесения в env)
-SECRET_KEY = 'django-insecure-h)=g1)3cy9e&&6a-!#-zk@rl^dpp@*@1k$uua!l7=)ov1@q!v&'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+# Security (значения берем из переменных окружения; для локалки есть дефолты)
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'dev-secret-key-change-me')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '*').split(',') if h]
 
 # Application definition
 INSTALLED_APPS = [
@@ -73,12 +73,12 @@ WSGI_APPLICATION = 'rental_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'rental_system_db',
-        'USER': 'postgres',
-        'PASSWORD': '1',
+        'NAME': os.environ.get('POSTGRES_DB', 'rental_system_db'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
         # В контейнере обращаемся по имени сервиса docker-compose
         'HOST': os.environ.get('POSTGRES_HOST', 'db'),
-        'PORT': '5432',
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
 }
 
@@ -127,13 +127,12 @@ BACKUP_DIR = BASE_DIR / "backups"
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Email backend (для восстановления пароля отправляем в консоль)
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# SMTP через Gmail (используйте пароль приложения, а не основной пароль аккаунта)
-EMAIL_HOST = "smtp.resend.com"
-EMAIL_PORT = 465
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
-EMAIL_HOST_USER = "resend"
-EMAIL_HOST_PASSWORD = "re_dQV8rEv9_6N95q8aNRvQQWZJxAQjYg9BD"  # пароль приложения Gmail (без пробелов)
-DEFAULT_FROM_EMAIL = "isabellaslivina@gmail.com"
+# Email backend (читаем настройки из окружения)
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.resend.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@constrent.local')
