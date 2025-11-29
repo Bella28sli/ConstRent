@@ -19,6 +19,9 @@ services:
       - grafanaprometeus_monitoring_system
     depends_on:
       - db
+    env_file:
+      - .env
+
 
   db:
     image: postgres:15
@@ -34,7 +37,7 @@ services:
 
 networks:
   grafanaprometeus_monitoring_system:
-    external: true  # та же сеть, что у Grafana/Prometheus
+    external: true  
 
 volumes:
   pgdata:

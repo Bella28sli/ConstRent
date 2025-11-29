@@ -1,0 +1,22 @@
+# Virtual env and Python cache
+venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment and secrets
+.env
+
+# Local build/output
+staticfiles/
+media/
+backups/
+prometheus_multiproc_dir/
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Django/DB temp
+*.sqlite3
+
