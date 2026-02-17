@@ -30,7 +30,9 @@ def _normalize_names(raw: str):
 
 @register.filter
 def has_group(user, group_name: str) -> bool:
-    """Проверяет, состоит ли пользователь в группе (с учетом алиасов и регистра)."""
+    """
+    Проверяет, состоит ли пользователь в группе (с учетом алиасов и регистра).
+    """
     try:
         if not user.is_authenticated:
             return False

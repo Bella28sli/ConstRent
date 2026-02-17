@@ -1,0 +1,42 @@
+services:
+  gitlab-runner:
+    image: gitlab/gitlab-runner:alpine-v17.9.1
+    container_name: gitlab-runner
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner_config:/etc/gitlab-runner
+    environment:
+      CI_SERVER_URL: ${GITLAB_URL}
+      RUNNER_NAME: rental-system-runner
+      RUNNER_EXECUTOR: docker
+      RUNNER_TAG_LIST: docker
+      RUNNER_IMAGE: python:3.12-slim
+      RUNNER_RUN_UNTAGGED: "true"
+      RUNNER_LOCKED: "false"
+      GITLAB_RUNNER_TOKEN: ${GITLAB_RUNNER_TOKEN}
+      RUNNER_CLONE_URL: ${GITLAB_CLONE_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -f /etc/gitlab-runner/config.toml ]; then
+          gitlab-runner register \
+            --non-interactive \
+            --url "$CI_SERVER_URL" \
+            --token "$GITLAB_RUNNER_TOKEN" \
+            --executor "$RUNNER_EXECUTOR" \
+            --docker-image "$RUNNER_IMAGE" \
+            --description "$RUNNER_NAME" \
+            --tag-list "$RUNNER_TAG_LIST" \
+            --run-untagged "$RUNNER_RUN_UNTAGGED" \
+            --locked "$RUNNER_LOCKED" \
+            --docker-volumes /var/run/docker.sock:/var/run/docker.sock \
+            --clone-url "$RUNNER_CLONE_URL"
+        fi
+        exec gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
+
+volumes:
+  runner_config:

@@ -10,9 +10,7 @@ BACKUP_DIR = Path(getattr(settings, "BACKUP_DIR", settings.BASE_DIR / "backups")
 
 @staff_member_required
 def download_backup(request, filename: str):
-    """
-    Отдает файл бэкапа только для staff/admin. Простая валидация имени предотвращает обход каталога.
-    """
+
     if ".." in filename or filename.startswith("."):
         raise Http404()
 

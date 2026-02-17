@@ -83,6 +83,12 @@
                     {% if base_form.non_field_errors %}
                         <div class="alert alert-danger">{{ base_form.non_field_errors }}</div>
                     {% endif %}
+                    {% if detail_type == 'individual' and individual_form.non_field_errors %}
+                        <div class="alert alert-danger">{{ individual_form.non_field_errors }}</div>
+                    {% endif %}
+                    {% if detail_type == 'company' and company_form.non_field_errors %}
+                        <div class="alert alert-danger">{{ company_form.non_field_errors }}</div>
+                    {% endif %}
                     <div class="mb-3">
                         {{ base_form.email.label_tag }}
                         {{ base_form.email }}
@@ -130,7 +136,7 @@
 
 <script>
     (function() {
-        const typeSelect = document.getElementById('client-type-select');
+        const typeSelect = document.querySelector('select[name="type"]');
         const indiv = document.getElementById('individual-form');
         const comp = document.getElementById('company-form');
         function toggleForms() {

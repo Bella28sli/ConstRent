@@ -12,7 +12,9 @@
 <body class="bg-surface text-primary d-flex flex-column min-vh-100">
     <nav class="navbar navbar-expand-lg navbar-dark bg-accent mb-3">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">ConstRent</a>
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'home' %}">
+                <img src="/media/logo/logo-text.svg" alt="ConstRent" height="36" class="me-2">
+            </a>
             {% if user.is_authenticated %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -54,7 +56,8 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-people me-1"></i>Клиенты</a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'clients' %}"><i class="bi bi-list-ul me-1"></i>Список клиентов</a></li>
+                            <li><a class="dropdown-item" href="{% url 'clients_individual' %}"><i class="bi bi-person-lines-fill me-1"></i>Физические лица</a></li>
+                            <li><a class="dropdown-item" href="{% url 'clients_company' %}"><i class="bi bi-building me-1"></i>Юридические лица</a></li>
                             <li><a class="dropdown-item" href="{% url 'client_rent_history' %}"><i class="bi bi-clock-history me-1"></i>История аренд</a></li>
                             <li><a class="dropdown-item" href="{% url 'addresses' %}"><i class="bi bi-geo me-1"></i>Адреса</a></li>
                         </ul>
@@ -126,11 +129,14 @@
 
     <footer class="mt-auto py-3 bg-accent text-light">
         <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <span class="fw-bold">ConstRent — аренда строительной техники</span>
+            <div class="d-flex align-items-center mb-2 mb-md-0">
+                <img src="/media/logo/logo.svg" alt="ConstRent" height="34" class="me-2">
+                <span class="fw-bold">ConstRent — аренда строительной техники</span>
+            </div>
             <span class="small">
                 Контакты:
                 <a class="link-light" href="mailto:izabellaslivina@gmail.com">izabellaslivina@gmail.com</a>
-                и
+                |
                 <a class="link-light" href="tel:+79854180121">+7 985 418-01-21</a>
             </span>
         </div>

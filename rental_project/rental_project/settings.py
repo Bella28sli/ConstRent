@@ -26,6 +26,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_prometheus',
+    'django_extensions',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'rental_system',
     'rest_framework',
     'api',
@@ -76,7 +79,6 @@ DATABASES = {
         'NAME': os.environ.get('POSTGRES_DB', 'rental_system_db'),
         'USER': os.environ.get('POSTGRES_USER', 'postgres'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', ''),
-        # В контейнере обращаемся по имени сервиса docker-compose
         'HOST': os.environ.get('POSTGRES_HOST', 'db'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
@@ -99,7 +101,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'api.schema.TaggedAutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
     'EXCEPTION_HANDLER': 'api.exception_handler.custom_exception_handler',

@@ -13,10 +13,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class AdminOrGroupsWrite(permissions.BasePermission):
-    """
-    Чтение — всем аутентифицированным. Запись — только is_staff или участникам указанных групп.
-    Leader/прочие группы будут иметь только чтение, если не входят в groups.
-    """
 
     groups = []
 

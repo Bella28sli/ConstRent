@@ -198,9 +198,12 @@ class EquipmentCountryView(RoleRequiredMixin, FormView):
 class ClientListView(RoleRequiredMixin, TemplateView):
     allowed_roles = {"manager"}
     template_name = "clients/list.html"
+    fixed_type = None  # None = оба, "individual", "company"
 
     def get_queryset(self):
         qs = Client.objects.select_related("indclient", "compclient")
+        if self.fixed_type:
+            qs = qs.filter(type=self.fixed_type)
         type_filter = self.request.GET.get("type")
         search = self.request.GET.get("q")
         sort = self.request.GET.get("sort", "recent")
@@ -247,6 +250,8 @@ class ClientListView(RoleRequiredMixin, TemplateView):
         if edit_id:
             edit_client = Client.objects.filter(id=edit_id).first()
         base_form, indiv_form, comp_form, detail_type = self.get_forms(edit_client)
+        if self.fixed_type:
+            detail_type = self.fixed_type
         ctx.update(
             {
                 "clients": self.get_queryset(),
@@ -279,7 +284,7 @@ class ClientListView(RoleRequiredMixin, TemplateView):
 
         edit_id = request.POST.get("edit_id")
         client = Client.objects.filter(id=edit_id).first() if edit_id else None
-        client_type = request.POST.get("type") or (client.type if client else "individual")
+        client_type = self.fixed_type or request.POST.get("type") or (client.type if client else "individual")
 
         base_form = ClientForm(request.POST, instance=client)
         indiv_instance = client.indclient if client and hasattr(client, "indclient") else None
@@ -309,6 +314,37 @@ class ClientListView(RoleRequiredMixin, TemplateView):
         ctx["detail_type"] = client_type
         ctx["edit_id"] = edit_id
         return self.render_to_response(ctx)
+
+
+class IndividualClientView(ClientListView):
+    template_name = "clients/individuals.html"
+    fixed_type = "individual"
+
+    def get_forms(self, edit_client=None):
+        base_form = ClientForm(instance=edit_client) if edit_client else ClientForm()
+        individual_form = IndividualClientForm(instance=getattr(edit_client, "indclient", None))
+        # скрываем выбор типа, но фиксируем значение
+        base_form.fields["type"].initial = self.fixed_type
+        return base_form, individual_form, None, self.fixed_type
+
+    def post(self, request, *args, **kwargs):
+        self.fixed_type = "individual"
+        return super().post(request, *args, **kwargs)
+
+
+class CompanyClientView(ClientListView):
+    template_name = "clients/companies.html"
+    fixed_type = "company"
+
+    def get_forms(self, edit_client=None):
+        base_form = ClientForm(instance=edit_client) if edit_client else ClientForm()
+        company_form = CompanyClientForm(instance=getattr(edit_client, "compclient", None))
+        base_form.fields["type"].initial = self.fixed_type
+        return base_form, None, company_form, self.fixed_type
+
+    def post(self, request, *args, **kwargs):
+        self.fixed_type = "company"
+        return super().post(request, *args, **kwargs)
 
 
 class UserListView(RoleRequiredMixin, TemplateView):
@@ -898,7 +934,7 @@ class BackupListView(RoleRequiredMixin, TemplateView):
                 # plain SQL, UTF-8: читаемый .bak
                 call_command("backup_db", output_dir=str(backup_dir))
                 messages.success(request, "Бэкап создан (SQL UTF-8).")
-            except Exception as exc:  # pragma: no cover
+            except Exception as exc:  
                 messages.error(request, f"Не удалось создать бэкап: {exc}")
         return redirect("backup_list")
 

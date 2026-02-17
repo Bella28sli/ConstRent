@@ -20,7 +20,6 @@ class BusinessRuleError(DomainError):
 
 def custom_exception_handler(exc, context):
     """
-    Normalize exceptions into a consistent JSON shape:
     {"code": "...", "message": "...", "details": {...}}
     """
     if isinstance(exc, DjangoValidationError):

@@ -7,6 +7,37 @@ from django.db import transaction
 from django.utils import timezone
 
 class RentalService:
+    @staticmethod
+    def log_action(staff_id: int, action_type: str, description: str, success: bool = True):
+        """
+        Универсальное логирование действий (fallback, если Log/ActionType недоступны — молчим).
+        """
+        try:
+            from .models import Log
+            from django.contrib.auth import get_user_model
+
+            User = get_user_model()
+            staff = User.objects.filter(id=staff_id).first()
+
+            if hasattr(Log, "ActionType"):
+                # если не нашли точное значение в choices — пишем OTHER
+                allowed = [c[0] for c in Log.ActionType.choices]
+                action_value = action_type if action_type in allowed else Log.ActionType.OTHER
+            else:
+                action_value = action_type
+
+            Log.objects.create(
+                staff=staff,
+                action_type=action_value,
+                description_text=description,
+                success_status=success,
+            )
+        except Exception:
+            # Безопасно подавляем, чтобы не ронять основной поток (лог — вспомогательный)
+            return
+
+    # совместимость с вызовами _log_action
+    _log_action = log_action
     
     @staticmethod
     def get_client_rental_history(client_id: int) -> List[Dict]:
@@ -66,18 +97,14 @@ class RentalService:
 
             User = get_user_model()
 
-            # Проверяем существование клиента и пользователя
             client = Client.objects.get(id=client_id)
             staff = User.objects.get(id=staff_id)
             
-            # Генерируем номер договора
             agreement_number = Rent.generate_agreement_number()
             
-            # Устанавливаем дату договора (по умолчанию - сегодня)
             if not rent_agreement_date:
                 rent_agreement_date = timezone.now().date()
             
-            # Проверяем доступность всего оборудования перед созданием аренды
             unavailable_equipment = []
             for equipment_id in equipment_ids:
                 try:
@@ -94,7 +121,6 @@ class RentalService:
                     f"Следующее оборудование недоступно или не найдено: {', '.join(unavailable_equipment)}"
                 )
             
-            # Создаем запись аренды
             rent = Rent.objects.create(
                 client=client,
                 staff=staff,
@@ -105,21 +131,16 @@ class RentalService:
                 rent_status='active',
                 total_amount=total_amount,
                 is_paid=False
-                # actual_end_date, payment_date, payment_method, transaction_number - остаются NULL
             )
             
-            # Создаем записи об оборудовании в аренде и обновляем статусы
             for equipment_id in equipment_ids:
                 equipment = Equipment.objects.select_for_update().get(id=equipment_id)
                 
-                # Создаем связь аренда-оборудование
                 RentItems.objects.create(rent=rent, equipment=equipment)
                 
-                # Обновляем статус оборудования
                 equipment.status = 'rented'
                 equipment.save(update_fields=['status'])
             
-            # Логируем успешное создание
             RentalService._log_action(
                 staff_id, 
                 'CREATE', 
@@ -130,10 +151,8 @@ class RentalService:
             return rent
             
         except ValidationError:
-            # Перебрасываем ValidationError как есть
             raise
         except Exception as e:
-            # Логируем другие ошибки
             RentalService._log_action(
                 staff_id, 
                 'CREATE', 
@@ -153,18 +172,15 @@ class RentalService:
             
             rent = Rent.objects.select_for_update().get(id=rent_id)
             
-            # Обновляем аренду
             rent.actual_end_date = actual_end_date
             rent.rent_status = 'completed'
             rent.save()
             
-            # Возвращаем оборудование
             rent_items = RentItems.objects.filter(rent=rent).select_related('equipment')
             for item in rent_items:
                 item.equipment.status = 'available'
                 item.equipment.save()
             
-            # Логируем действие
             RentalService.log_action(staff_id, 'UPDATE', f'Завершена аренда #{rent.id}')
             
             return rent
@@ -175,7 +191,6 @@ class RentalService:
 
 
 
-# Удобные shortcuts
 def get_client_history(client_id: int) -> List[Dict]:
     return RentalService.get_client_rental_history(client_id)
 
@@ -193,14 +208,12 @@ class BulkOperationsService:
         try:
             from .models import Equipment
             
-            # Блокируем все записи для обновления
             equipment_list = Equipment.objects.filter(
                 id__in=equipment_ids
             ).select_for_update()
             
             updated_count = equipment_list.update(status=new_status)
             
-            # Логируем массовое действие
             RentalService.log_action(
                 staff_id,
                 'CHANGE_STATUS',
@@ -235,14 +248,12 @@ class PaymentService:
             if rent.is_paid:
                 raise ValidationError("Аренда уже оплачена")
             
-            # Обновляем информацию о платеже
             rent.is_paid = True
             rent.payment_method = payment_data.get('payment_method')
             rent.transaction_number = payment_data.get('transaction_number')
             rent.payment_date = payment_data.get('payment_date', timezone.now().date())
             rent.save()
             
-            # Логируем платеж
             RentalService.log_action(
                 staff_id, 
                 'UPDATE', 
