@@ -6,8 +6,6 @@ stages:
 
 .default_python_job:
   image: python:3.12-slim
-  tags:
-    - docker
   variables:
     PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
     PYTHONDONTWRITEBYTECODE: "1"
