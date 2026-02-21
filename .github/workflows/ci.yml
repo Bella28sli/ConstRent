@@ -1,0 +1,290 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+  DJANGO_SECRET_KEY: "ci-secret-key"
+  DJANGO_DEBUG: "False"
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1"
+
+jobs:
+  lint_syntax:
+    name: Lint Syntax
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: rental_project/requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          python --version
+          pip install --upgrade pip
+          pip install -r rental_project/requirements.txt
+          mkdir -p artifacts
+
+      - name: Run Ruff
+        run: |
+          pip install ruff
+          set +e
+          ruff check rental_project --select E9,F63,F7,F82 > artifacts/ruff-report.txt
+          RUFF_EXIT=$?
+          ruff check rental_project --select E9,F63,F7,F82 --output-format json > artifacts/ruff-report.json
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          report = Path("artifacts/ruff-report.json")
+          items = json.loads(report.read_text(encoding="utf-8")) if report.exists() else []
+
+          lines = [
+              "# Lint Report",
+              "",
+              f"- Generated at (UTC): {datetime.now(timezone.utc).isoformat()}",
+              f"- Files checked: `rental_project/**`",
+              f"- Rules: `E9,F63,F7,F82`",
+              f"- Total issues: **{len(items)}**",
+              "",
+          ]
+          if items:
+              lines.append("## First 10 Issues")
+              lines.append("")
+              for issue in items[:10]:
+                  path = issue.get("filename", "unknown")
+                  code = issue.get("code", "unknown")
+                  msg = issue.get("message", "").strip()
+                  row = issue.get("location", {}).get("row", "?")
+                  col = issue.get("location", {}).get("column", "?")
+                  lines.append(f"- `{path}:{row}:{col}` [{code}] {msg}")
+          else:
+              lines.append("No syntax/fatal issues found.")
+
+          Path("artifacts/lint-summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          exit $RUFF_EXIT
+
+      - name: Upload Lint Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-artifacts
+          path: |
+            artifacts/ruff-report.txt
+            artifacts/ruff-report.json
+            artifacts/lint-summary.md
+
+  test_smoke:
+    name: Test Smoke
+    runs-on: ubuntu-latest
+    needs: lint_syntax
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: rental_project/requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          python --version
+          pip install --upgrade pip
+          pip install -r rental_project/requirements.txt
+          mkdir -p artifacts
+
+      - name: Run Smoke Checks
+        run: |
+          cd rental_project
+          python manage.py check | tee ../artifacts/test-smoke.log
+          python -m compileall . | tee -a ../artifacts/test-smoke.log
+          cd ..
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import re
+
+          log_path = Path("artifacts/test-smoke.log")
+          text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
+          compiled = len(re.findall(r"Compiling ", text))
+          failed = len(re.findall(r"SyntaxError|Traceback|Error", text))
+
+          lines = [
+              "# Smoke Test Report",
+              "",
+              f"- Generated at (UTC): {datetime.now(timezone.utc).isoformat()}",
+              "- Commands:",
+              "  - `python manage.py check`",
+              "  - `python -m compileall rental_project`",
+              f"- Compiled files detected: **{compiled}**",
+              f"- Error markers in log: **{failed}**",
+              "",
+              "See full output in `test-smoke.log`.",
+          ]
+          Path("artifacts/test-summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload Smoke Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            artifacts/test-smoke.log
+            artifacts/test-summary.md
+
+  build_project:
+    name: Build Project
+    runs-on: ubuntu-latest
+    needs: test_smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: rental_project/requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          python --version
+          pip install --upgrade pip
+          pip install -r rental_project/requirements.txt
+          mkdir -p artifacts
+
+      - name: Build Artifacts
+        run: |
+          cd rental_project
+          python manage.py collectstatic --noinput
+          python manage.py spectacular --file ../artifacts/openapi.yaml
+          cd ..
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          static_dir = Path("rental_project/staticfiles")
+          openapi = Path("artifacts/openapi.yaml")
+          static_files = list(static_dir.rglob("*")) if static_dir.exists() else []
+          static_count = len([p for p in static_files if p.is_file()])
+          static_size = sum(p.stat().st_size for p in static_files if p.is_file())
+          openapi_size = openapi.stat().st_size if openapi.exists() else 0
+
+          lines = [
+              "# Build Report",
+              "",
+              f"- Generated at (UTC): {datetime.now(timezone.utc).isoformat()}",
+              "- Steps:",
+              "  - `python manage.py collectstatic --noinput`",
+              "  - `python manage.py spectacular --file artifacts/openapi.yaml`",
+              f"- Static files generated: **{static_count}**",
+              f"- Static files total size: **{static_size} bytes**",
+              f"- OpenAPI file size: **{openapi_size} bytes**",
+          ]
+          Path("artifacts/build-summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload Build Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            artifacts/openapi.yaml
+            artifacts/build-summary.md
+            rental_project/staticfiles
+
+  dependency_scanning:
+    name: Dependency Scanning
+    runs-on: ubuntu-latest
+    needs: build_project
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: rental_project/requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          python --version
+          pip install --upgrade pip
+          pip install -r rental_project/requirements.txt
+          mkdir -p artifacts
+
+      - name: Run Dependency Audit
+        run: |
+          pip install pip-audit
+          set +e
+          pip-audit -r rental_project/requirements.txt --format json > artifacts/pip-audit.json
+          AUDIT_EXIT=$?
+          pip-audit -r rental_project/requirements.txt > artifacts/pip-audit.txt || true
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          data = {}
+          p = Path("artifacts/pip-audit.json")
+          if p.exists():
+              data = json.loads(p.read_text(encoding="utf-8"))
+
+          deps = data.get("dependencies", []) if isinstance(data, dict) else []
+          vuln_count = 0
+          affected = []
+          for dep in deps:
+              vulns = dep.get("vulns", []) or []
+              if vulns:
+                  affected.append(dep.get("name", "unknown"))
+                  vuln_count += len(vulns)
+
+          lines = [
+              "# Dependency Security Report",
+              "",
+              f"- Generated at (UTC): {datetime.now(timezone.utc).isoformat()}",
+              f"- Dependencies scanned: **{len(deps)}**",
+              f"- Total vulnerabilities: **{vuln_count}**",
+              f"- Affected packages: **{len(affected)}**",
+              "",
+          ]
+          if affected:
+              lines.append("## Affected Packages")
+              lines.append("")
+              for name in sorted(set(affected)):
+                  lines.append(f"- `{name}`")
+          else:
+              lines.append("No vulnerable packages found.")
+
+          Path("artifacts/security-summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          exit $AUDIT_EXIT
+
+      - name: Upload Security Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-artifacts
+          path: |
+            artifacts/pip-audit.json
+            artifacts/pip-audit.txt
+            artifacts/security-summary.md
